@@ -1,5 +1,5 @@
 /* Offline cache: opened pages and content keep working without internet. Bump VERSION when files change. */
-const VERSION = 'posveta-v3';
+const VERSION = 'posveta-v4';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest',
   'content/days.json', 'content/intro.json', 'content/prayers.json',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];

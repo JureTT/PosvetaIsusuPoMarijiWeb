@@ -415,7 +415,7 @@ function renderDay(i, toReading) {
     <h2 class="day">${esc(d.title)}</h2>
     ${pbox}
     <div class="box">${ttsHtml()}</div>
-    <div class="body">${bodyHtml(d.text)}</div>
+    <div class="body jok">${bodyHtml(d.text)}</div>
     <div class="sec" style="margin-top:20px">MOJE BILJEŠKE</div>
     <textarea id="note" placeholder="Zapišite svoje misli uz današnju duhovnu vježbu">${esc(store.get('note_' + i, ''))}</textarea>
     <button class="primary block" data-act="done" data-i="${i}">${isDone(i) ? '✓ Završeno' : 'Označi kao završeno'}</button>
@@ -450,7 +450,7 @@ function renderPage(kind, id, dayCtx) {
     <div class="top"><button data-act="back">‹ Natrag</button></div>
     <h2 class="day">${esc(page.title)}</h2>
     <div class="box">${ttsHtml()}</div>
-    <div class="body">${bodyHtml(page.text)}</div>
+    <div class="body${kind === 'intro' ? ' jok' : ''}">${bodyHtml(page.text)}</div>
     ${navHtml(kind, id, dayCtx)}`;
   TTS.load('page:' + kind + ':' + id, page.text);
   if (PAGE.audio) REC.load(PAGE.key, PAGE.audio);

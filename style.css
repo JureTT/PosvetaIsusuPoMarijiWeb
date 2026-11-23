@@ -45,4 +45,4 @@ input[type=date]{font:inherit;min-height:44px;padding:6px 10px;border-radius:10p
 
 .pbar{height:4px;border-radius:2px;background:var(--border);overflow:hidden;margin:10px 2px 0}
 .pbar>div{height:100%;width:0;background:var(--primary);transition:width .3s linear}
-body.justify .body p{text-align:justify;text-justify:inter-word;hyphens:auto;-webkit-hyphens:auto}
+body.justify .body.jok p{text-align:justify;text-justify:inter-word;hyphens:none;-webkit-hyphens:none}
