@@ -46,3 +46,16 @@ input[type=date]{font:inherit;min-height:44px;padding:6px 10px;border-radius:10p
 .pbar{height:4px;border-radius:2px;background:var(--border);overflow:hidden;margin:10px 2px 0}
 .pbar>div{height:100%;width:0;background:var(--primary);transition:width .3s linear}
 body.justify .body.jok p{text-align:justify;text-justify:inter-word;hyphens:none;-webkit-hyphens:none}
+
+.ov{position:relative;flex:1}
+.ov input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;cursor:pointer}
+.switch{position:relative;flex:0 0 auto;width:48px;height:28px;display:inline-block}
+.switch input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer;z-index:1}
+.switch i{position:absolute;inset:0;border-radius:14px;background:var(--border);transition:.2s}
+.switch i:before{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:var(--bg);transition:.2s}
+.switch input:checked+i{background:var(--primary)}
+.switch input:checked+i:before{transform:translateX(20px)}
+.sw-row{min-height:44px}
+.totop{display:block;font-size:.85em;color:var(--primary);cursor:pointer;margin:1em 0 .2em}
+.toc{padding:2px 8px}
+dialog input[type=time]{font:inherit;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text)}

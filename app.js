@@ -58,7 +58,7 @@ function applyTheme() {
   r.setProperty('--sec', p.sec); r.setProperty('--primary', p.primary); r.setProperty('--onprimary', p.onprimary);
   r.setProperty('--accent', p.accent); r.setProperty('--border', p.border);
   r.setProperty('--scale', SCALES[scaleIndex()]);
-  document.body.classList.toggle('justify', store.get('justify', true));
+  document.body.classList.toggle('justify', store.get('justify', false));
   let m = document.querySelector('meta[name=theme-color]');
   if (m) m.setAttribute('content', p.bg);
 }
@@ -68,7 +68,44 @@ const scaleIndex = () => Math.min(Math.max(store.get('scale', 1), 0), SCALES.len
 function paragraphs(text) {
   return text.split('\n\n').map(p => p.startsWith('## ') ? {h: true, t: p.slice(3).trim()} : {h: false, t: p.trim()}).filter(p => p.t);
 }
-function bodyHtml(text) {
+function findChapters(pars) {
+  const kinds = [];
+  pars.forEach((p, i) => {
+    if (!p.h) return;
+    const k = p.t.toLowerCase().trim().replace(/:+$/, '').trim();
+    let t = null;
+    if (k === 'razmatranje') t = 'M'; else if (k === 'molitva prije razmatranja') t = 'P';
+    else if (k === 'citati iz biblije') t = 'B'; else if (k.startsWith('međugorsk')) t = 'G';
+    else if (k === 'duhovni tekst') t = 'S'; else if (k === 'duhovna vježba') t = 'E';
+    if (t) kinds.push({i, t});
+  });
+  const ch = []; let med = 0, spirit = false, prayerAt = -1;
+  kinds.forEach(m => {
+    if (m.t === 'P') prayerAt = m.i;
+    else if (m.t === 'M') {
+      med++;
+      if (med === 1) ch.push(prayerAt >= 0 ? {i: prayerAt, t: 'Razmatranje i molitva'} : {i: m.i, t: 'Razmatranje'});
+      else if (!spirit) { ch.push({i: m.i, t: 'Duhovni tekst'}); spirit = true; }
+    }
+    else if (m.t === 'S') { if (!spirit) { ch.push({i: m.i, t: 'Duhovni tekst'}); spirit = true; } }
+    else if (m.t === 'B') ch.push({i: m.i, t: 'Citati iz Biblije'});
+    else if (m.t === 'G') ch.push({i: m.i, t: 'Gospina poruka'});
+    else if (m.t === 'E') ch.push({i: m.i, t: 'Duhovna vježba'});
+  });
+  if (!ch.length) return [];
+  if (ch[0].i >= 8) ch.unshift({i: 0, t: 'Dnevni red'});
+  return ch.length >= 2 ? ch : [];
+}
+function tocHtml(pars) {
+  const ch = findChapters(pars);
+  if (!ch.length) return '';
+  return `<div class="box toc"><button class="link" data-act="toc" id="tocBtn">Sadržaj ▾</button><div id="tocList" hidden>${ch.map(c => `<button class="link" data-act="goto" data-p="${c.i}">› ${esc(c.t)}</button>`).join('')}</div></div>`;
+}
+function bodyHtml(text, withToc) {
+  if (withToc) {
+    const pars = paragraphs(text), at = new Map(findChapters(pars).map(c => [c.i, c]));
+    return pars.map((p, i) => (at.has(i) && i > 0 ? '<a class="totop" data-act="top">↑ Na vrh</a>' : '') + (p.h ? `<h3 data-p="${i}">${esc(p.t)}</h3>` : `<p data-p="${i}">${esc(p.t)}</p>`)).join('');
+  }
   return paragraphs(text).map((p, i) => p.h ? `<h3 data-p="${i}">${esc(p.t)}</h3>` : `<p data-p="${i}">${esc(p.t)}</p>`).join('');
 }
 
@@ -359,6 +396,74 @@ const app = () => document.getElementById('app');
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const standalone = () => window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
 
+const fmtShort = e => { const d = new Date(e * 86400000); return d.getUTCDate() + '.' + (d.getUTCMonth() + 1) + '.'; };
+const pad2 = n => String(n).padStart(2, '0');
+const remTime = () => pad2(store.get('remH', 8)) + ':' + pad2(store.get('remM', 0));
+
+/* ---------- dialogs ---------- */
+function dlg(html, handlers) {
+  return new Promise(res => {
+    let d = document.getElementById('dlg');
+    if (!d) { d = document.createElement('dialog'); d.id = 'dlg'; document.body.appendChild(d); }
+    d.innerHTML = html;
+    d.onclose = () => res(d.returnValue || null);
+    d.onclick = e => { const b = e.target.closest('[data-v]'); if (b) d.close(b.dataset.v); };
+    if (handlers) handlers(d);
+    d.returnValue = '';
+    d.showModal();
+  });
+}
+const askYesNo = msg => dlg(`<p style="margin:0 0 8px">${esc(msg)}</p><button data-v="yes" class="primary">Da</button><button data-v="no">Ne</button>`).then(v => v === 'yes');
+const info = msg => dlg(`<p style="margin:0 0 8px">${esc(msg)}</p><button data-v="ok">U redu</button>`);
+function pickTime() {
+  let val = remTime();
+  return dlg(`<p style="margin:0 0 8px">Odaberite vrijeme podsjetnika</p><input type="time" id="dlgTime" value="${val}" style="width:100%"><button data-v="ok" class="primary">U redu</button><button data-v="cancel">Odustani</button>`,
+    d => { d.querySelector('#dlgTime').oninput = e => { val = e.target.value; }; })
+    .then(v => v === 'ok' && /^\d\d:\d\d$/.test(val) ? val : null);
+}
+
+/* ---------- calendar (.ics) ---------- */
+const icsDate = e => new Date(e * 86400000).toISOString().slice(0, 10).replace(/-/g, '');
+function makeIcs(kind) {
+  const h = store.get('remH', 8), m = store.get('remM', 0), s = startDay();
+  const t = pad2(h) + pad2(m) + '00', t2 = pad2(m >= 45 ? (h + 1) % 24 : h) + pad2((m + 15) % 60) + '00';
+  const url = location.origin + location.pathname;
+  const daily = kind === 'daily';
+  const day = daily ? s : s + total() - 1;
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const title = daily ? 'Posveta Isusu po Mariji: današnja molitva' : 'Obnova posvete Isusu po Mariji';
+  const desc = (daily ? 'Vrijeme je za današnju molitvu. ' : 'Danas je godišnjica vaše posvete Isusu po Mariji. ') + url;
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Posveta//HR', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
+    'UID:posveta-' + kind + '-' + icsDate(day) + '@posveta', 'DTSTAMP:' + stamp,
+    'DTSTART:' + icsDate(day) + 'T' + t, 'DTEND:' + icsDate(day) + 'T' + t2,
+    daily ? 'RRULE:FREQ=DAILY;COUNT=' + total() : 'RRULE:FREQ=YEARLY',
+    'SUMMARY:' + title, 'DESCRIPTION:' + desc.replace(/,/g, '\\,'), 'URL:' + url,
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + title, 'TRIGGER:PT0S', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n') + '\r\n';
+}
+function downloadIcs(kind) {
+  const blob = new Blob([makeIcs(kind)], {type: 'text/calendar;charset=utf-8'});
+  const u = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = u; a.download = kind === 'daily' ? 'posveta-podsjetnik.ics' : 'posveta-obnova.ics';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 60000);
+}
+async function offerCalendar(kind) {
+  if (await askYesNo(kind === 'daily' ? 'Dodati podsjetnik u kalendar? (jedan događaj koji se ponavlja svaki dan posvete)' : 'Dodati godišnji podsjetnik na obnovu posvete u kalendar?')) downloadIcs(kind);
+}
+const OFFNOTE = 'Podsjetnik je isključen. Događaj koji ste dodali u kalendar obrišite ručno u aplikaciji Kalendar.';
+async function toggleDaily(on, box) {
+  if (!on) { store.set('remOn', false); await info(OFFNOTE); return; }
+  if (startDay() === null) { box.checked = false; await info('Najprije odaberite datum početka.'); return; }
+  const v = await pickTime();
+  if (!v) { box.checked = false; return; }
+  store.set('remH', +v.slice(0, 2)); store.set('remM', +v.slice(3)); store.set('remOn', true);
+  renderHome(); await offerCalendar('daily');
+}
+async function toggleRenewal(on, box) {
+  if (!on) { store.set('renOn', false); await info(OFFNOTE); return; }
+  store.set('renOn', true); renderHome(); await offerCalendar('renewal');
+}
+
 function renderHome() {
   const n = total(), s = startDay();
   let status, startLabel;
@@ -382,16 +487,22 @@ function renderHome() {
     <button class="primary block" data-act="start">${esc(startLabel)}</button>
     <button class="block" data-go="#/days">Svi dani</button>
     <div class="row" style="align-items:center;margin-top:14px"><span style="flex:1">Datum početka</span>
-      <input type="date" id="startDate" value="${s === null ? '' : isoOf(s)}" style="flex:1"></div>
+      <div class="ov"><button class="block" style="margin:0">${s === null ? 'Odaberi datum' : fmtDate(s)}</button><input type="date" id="startDate" value="${s === null ? '' : isoOf(s)}"></div></div>
     <button class="block" data-act="feasts">Početak prema Marijinom blagdanu</button>
-    <div id="feastBox"></div>
     <div class="row" style="align-items:center;margin-top:14px"><span style="flex:1">Veličina slova</span>
       <button data-act="font-" aria-label="Manja slova">A−</button><button data-act="font+" aria-label="Veća slova">A+</button></div>
-    <div class="row" style="align-items:center;margin-top:14px"><span style="flex:1">Obostrano poravnanje teksta</span>
-      <button data-act="justify" style="flex:0 0 auto;min-width:110px">${store.get('justify', true) ? 'Uključeno' : 'Isključeno'}</button></div>
+    <label class="row sw-row" style="align-items:center;margin-top:14px"><span style="flex:1">Obostrano poravnanje teksta</span>
+      <span class="switch"><input type="checkbox" id="swJustify" ${store.get('justify', false) ? 'checked' : ''}><i></i></span></label>
     <div class="swatches">${sw}</div>
     <div class="box"><div class="sec">UVOD</div>${links(INTRO, 'intro')}</div>
     <div class="box"><div class="sec">MOLITVE</div>${links(PRAYERS, 'prayer')}</div>
+    <div class="box"><div class="sec">PODSJETNIK</div>
+      <div class="row sw-row" style="align-items:center"><label style="flex:1" for="swRem">Dnevni podsjetnik (vrijeme)</label>
+        <span class="switch"><input type="checkbox" id="swRem" ${store.get('remOn', false) ? 'checked' : ''}><i></i></span>
+        <div class="ov" style="flex:0 0 84px"><button class="block" style="margin:0;min-height:40px">${remTime()}</button><input type="time" id="remTime" value="${remTime()}"></div></div>
+      ${s === null ? '' : `<div class="row sw-row" style="align-items:center"><label style="flex:1" for="swRen">Godišnji podsjetnik na obnovu posvete (${fmtShort(s + n - 1)})</label>
+        <span class="switch"><input type="checkbox" id="swRen" ${store.get('renOn', false) ? 'checked' : ''}><i></i></span></div>`}
+    </div>
     <button class="link" data-act="share-notes">Podijeli bilješke</button>
     <button class="link" data-act="reset">Započni iznova</button>`;
 }
@@ -415,7 +526,8 @@ function renderDay(i, toReading) {
     <h2 class="day">${esc(d.title)}</h2>
     ${pbox}
     <div class="box">${ttsHtml()}</div>
-    <div class="body jok">${bodyHtml(d.text)}</div>
+    ${tocHtml(paragraphs(d.text))}
+    <div class="body jok">${bodyHtml(d.text, true)}</div>
     <div class="sec" style="margin-top:20px">MOJE BILJEŠKE</div>
     <textarea id="note" placeholder="Zapišite svoje misli uz današnju duhovnu vježbu">${esc(store.get('note_' + i, ''))}</textarea>
     <button class="primary block" data-act="done" data-i="${i}">${isDone(i) ? '✓ Završeno' : 'Označi kao završeno'}</button>
@@ -496,15 +608,15 @@ function shareNotes() {
   else alert(text);
 }
 
-function showFeasts() {
-  const box = document.getElementById('feastBox');
-  if (box.innerHTML) { box.innerHTML = ''; return; }
+async function showFeasts() {
   const today = todayEpoch(), t = new Date().getFullYear();
-  box.innerHTML = '<div class="box"><div class="muted">Dan posvete na blagdan:</div>' + FEASTS.map((f, k) => {
+  const html = '<p style="margin:0 0 4px"><b>Dan posvete na blagdan</b></p>' + FEASTS.map((f, k) => {
     let feast = epochOf(t, f[0], f[1]), start = feast - (total() - 1);
     if (start < today) { feast = epochOf(t + 1, f[0], f[1]); start = feast - (total() - 1); }
-    return `<button class="link" style="flex-direction:column;align-items:flex-start;height:auto;padding:8px 4px" data-act="feast" data-start="${start}"><span>${esc(f[2])}</span><span class="muted">početak ${fmtDate(start)}</span></button>`;
-  }).join('') + '</div>';
+    return `<button class="link" style="flex-direction:column;align-items:flex-start;height:auto;padding:8px 4px" data-v="${start}"><span>${esc(f[2])}</span><span class="muted">početak ${fmtDate(start)}</span></button>`;
+  }).join('') + '<button data-v="cancel">Odustani</button>';
+  const v = await dlg(html);
+  if (v && v !== 'cancel') { store.set('start', parseInt(v, 10)); renderHome(); }
 }
 
 document.addEventListener('click', e => {
@@ -519,12 +631,18 @@ document.addEventListener('click', e => {
       location.hash = '#/day/' + todayIndex(); break;
     }
     case 'feasts': showFeasts(); break;
-    case 'feast': store.set('start', parseInt(el.dataset.start, 10)); renderHome(); break;
+    case 'toc': { const l = document.getElementById('tocList'); l.hidden = !l.hidden; el.textContent = l.hidden ? 'Sadržaj ▾' : 'Sadržaj ▴'; break; }
+    case 'goto': { const t = document.querySelector('.body [data-p="' + el.dataset.p + '"]'); if (t) window.scrollTo({top: Math.max(t.getBoundingClientRect().top + window.scrollY - 12, 0), behavior: 'smooth'}); break; }
+    case 'top': window.scrollTo({top: 0, behavior: 'smooth'}); break;
     case 'theme': store.set('theme', el.dataset.id); applyTheme(); renderHome(); break;
     case 'font+': store.set('scale', Math.min(scaleIndex() + 1, SCALES.length - 1)); applyTheme(); break;
-    case 'justify': store.set('justify', !store.get('justify', true)); applyTheme(); renderHome(); break;
     case 'font-': store.set('scale', Math.max(scaleIndex() - 1, 0)); applyTheme(); break;
-    case 'done': { const i = parseInt(el.dataset.i, 10), v = !isDone(i); setDone(i, v); el.textContent = v ? '✓ Završeno' : 'Označi kao završeno'; break; }
+    case 'done': { const i = parseInt(el.dataset.i, 10), v = !isDone(i); setDone(i, v); el.textContent = v ? '✓ Završeno' : 'Označi kao završeno';
+      if (v && i === total() - 1 && !store.get('renAsked', false) && !store.get('renOn', false)) {
+        store.set('renAsked', true);
+        askYesNo('Čestitamo na posveti! Želite li jednom godišnje dobiti podsjetnik na obnovu posvete?').then(y => { if (y) { store.set('renOn', true); offerCalendar('renewal'); } });
+      }
+      break; }
     case 'share-notes': shareNotes(); break;
     case 'reset': if (confirm('Počinjete iznova? Datum početka i oznake završenih dana bit će obrisani (bilješke ostaju).')) { store.del('start'); store.del('done'); renderHome(); } break;
     case 'tts-toggle': eng().toggle(); break;
@@ -536,6 +654,15 @@ document.addEventListener('click', e => {
   }
 });
 document.addEventListener('change', e => {
+  const id = e.target && e.target.id;
+  if (id === 'swJustify') { store.set('justify', e.target.checked); applyTheme(); return; }
+  if (id === 'swRem') { toggleDaily(e.target.checked, e.target); return; }
+  if (id === 'swRen') { toggleRenewal(e.target.checked, e.target); return; }
+  if (id === 'remTime' && /^\d\d:\d\d$/.test(e.target.value)) {
+    store.set('remH', +e.target.value.slice(0, 2)); store.set('remM', +e.target.value.slice(3)); renderHome();
+    if (store.get('remOn', false)) offerCalendar('daily');
+    return;
+  }
   if (e.target && e.target.id === 'startDate' && e.target.value) {
     const [y, m, d] = e.target.value.split('-').map(Number);
     store.set('start', epochOf(y, m, d)); renderHome();
