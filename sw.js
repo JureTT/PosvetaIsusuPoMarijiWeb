@@ -1,7 +1,10 @@
 /* Offline cache: opened pages and content keep working without internet. Bump VERSION when files change. */
-const VERSION = 'posveta-v5';
+const VERSION = 'posveta-v6';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'manifest.webmanifest',
   'content/days.json', 'content/intro.json', 'content/prayers.json',
+  'themes.js', 'icons/flame.png', 'icons/flame-bold.png', 'icons/flame-detail.png', 'icons/flame-solid.png',
+  'fonts/cg-latin-500.woff2', 'fonts/cg-latin-ext-500.woff2', 'fonts/cg-latin-600.woff2', 'fonts/cg-latin-ext-600.woff2', 'fonts/cg-latin-700.woff2', 'fonts/cg-latin-ext-700.woff2',
+  'fonts/cg-latin-500i.woff2', 'fonts/cg-latin-ext-500i.woff2', 'fonts/cg-latin-600i.woff2', 'fonts/cg-latin-ext-600i.woff2',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {

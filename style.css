@@ -59,3 +59,37 @@ body.justify .body.jok p{text-align:justify;text-justify:inter-word;hyphens:none
 .totop{display:block;font-size:.85em;color:var(--primary);cursor:pointer;margin:1em 0 .2em}
 .toc{padding:2px 8px}
 dialog input[type=time]{font:inherit;min-height:44px;padding:6px 10px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/cg-latin-500.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/cg-latin-600.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/cg-latin-700.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Cormorant Garamond';font-style:italic;font-weight:500;font-display:swap;src:url(fonts/cg-latin-500i.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Cormorant Garamond';font-style:italic;font-weight:600;font-display:swap;src:url(fonts/cg-latin-600i.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/cg-latin-ext-500.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/cg-latin-ext-600.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Cormorant Garamond';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/cg-latin-ext-700.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Cormorant Garamond';font-style:italic;font-weight:500;font-display:swap;src:url(fonts/cg-latin-ext-500i.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Cormorant Garamond';font-style:italic;font-weight:600;font-display:swap;src:url(fonts/cg-latin-ext-600i.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+
+:root{--top1:#2250b5;--top2:#0c1f55;--flame:#fff;--hdr:#fff;--serif:'Cormorant Garamond',Georgia,'Times New Roman',serif}
+.flame{-webkit-mask:url(icons/flame.png) center/contain no-repeat;mask:url(icons/flame.png) center/contain no-repeat;background:var(--flame)}
+.body,.quote{font-family:var(--serif)}
+.body{font-size:calc(21px*var(--scale));font-weight:600;line-height:1.45}
+.quote{font-size:1.12em;font-weight:500}
+h1,h2.day,.body h3{font-family:var(--serif)}
+.band{position:relative;height:230px;margin:-20px -20px 0}
+.band-bg{position:absolute;inset:0;background:linear-gradient(160deg,var(--top1),var(--top2));clip-path:polygon(0 0,100% 0,100% 84%,0 100%)}
+.hflame{position:absolute;left:28px;top:46px;width:84px;height:114px}
+.band-text{position:absolute;left:128px;right:24px;top:50px;color:var(--hdr)}
+.kicker{font-size:11px;letter-spacing:.3em;text-transform:uppercase;opacity:.8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+h1.btitle{font-size:32px;line-height:1.02;font-weight:600;margin:8px 0 0;color:var(--hdr)}
+#splash{display:none}
+.splash-on #splash{display:block;position:fixed;inset:0;z-index:100;background:var(--bg);overflow:hidden}
+.sp-in{position:relative;max-width:640px;height:100%;margin:0 auto}
+.sp-plate{position:absolute;left:0;right:0;top:0;height:56vh;background:linear-gradient(160deg,var(--top1),var(--top2));clip-path:polygon(0 0,100% 0,100% 82%,0 100%)}
+.sp-flame{position:absolute;left:50%;margin-left:-84px;top:11vh;width:168px;height:229px}
+.sp-text{position:absolute;left:0;right:0;top:62vh;text-align:center;padding:0 32px}
+.sp-text .kicker{font-size:13px;letter-spacing:.34em;color:var(--sec);opacity:1}
+.sp-title{font-family:var(--serif);font-size:44px;line-height:1.02;font-weight:600;margin-top:16px;color:var(--text)}
+.sp-sub{font-size:14px;color:var(--sec);margin-top:22px}
+.splash-on #app{visibility:hidden}
+.splash-on #app.app-in{visibility:visible}

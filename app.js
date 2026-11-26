@@ -1,16 +1,6 @@
 'use strict';
 /* Posveta Isusu Kristu po Mariji – web verzija (PWA). Sve se čuva na uređaju (localStorage). */
 
-const PALETTES = [
-  ['light','Svjetlost','#FFFFFF','#F2F3F7','#171923','#686B78','#4053B8','#FFFFFF','#4053B8','#D9DCE7'],
-  ['parchment','Pergament','#F8F0DF','#F1E4C8','#392D24','#796B5B','#922F2D','#FFFFFF','#A33A35','#E3D2B2'],
-  ['sky','Nebo','#DCEFFA','#EFF7FC','#173653','#58738D','#1768B9','#FFFFFF','#2479C8','#BBD9EF'],
-  ['dark','Tišina','#08090D','#191B22','#F5F5F7','#A7A9B4','#83B2FF','#10131A','#83B2FF','#30333D'],
-  ['tt_classic','TT Klasično','#102D50','#1A3D64','#FFFFFF','#C5D7E9','#FFFFFF','#102D50','#8FC5F5','#315779'],
-  ['getsemani','Getsemani','#E9EBDD','#DDE3CD','#303A29','#68745D','#536B3E','#FFFFFF','#71864F','#C9D2B6'],
-  ['kalvarija','Kalvarija','#7A1F2B','#922D3A','#FFF7F2','#E8C9C9','#F0B8BC','#4A1119','#D98A91','#A94A55']
-].map(a => ({id:a[0], name:a[1], bg:a[2], surface:a[3], text:a[4], sec:a[5], primary:a[6], onprimary:a[7], accent:a[8], border:a[9]}));
-
 const SCALES = [0.85, 1, 1.15, 1.3, 1.5];
 const SPEEDS = [0.85, 1, 1.2];
 const FEASTS = [
@@ -52,12 +42,8 @@ const missedDays = () => { if (!begun()) return []; const t = todayIndex(), s = 
 
 /* ---------- theme ---------- */
 function applyTheme() {
-  const p = PALETTES.find(x => x.id === store.get('theme', 'light')) || PALETTES[0];
-  const r = document.documentElement.style;
-  r.setProperty('--bg', p.bg); r.setProperty('--surface', p.surface); r.setProperty('--text', p.text);
-  r.setProperty('--sec', p.sec); r.setProperty('--primary', p.primary); r.setProperty('--onprimary', p.onprimary);
-  r.setProperty('--accent', p.accent); r.setProperty('--border', p.border);
-  r.setProperty('--scale', SCALES[scaleIndex()]);
+  const p = applyPalette(store.get('theme', 'light'));
+  document.documentElement.style.setProperty('--scale', SCALES[scaleIndex()]);
   document.body.classList.toggle('justify', store.get('justify', false));
   let m = document.querySelector('meta[name=theme-color]');
   if (m) m.setAttribute('content', p.bg);
@@ -478,8 +464,9 @@ function renderHome() {
   const links = (arr, kind) => arr.map(p => `<button class="link" data-go="#/page/${kind}/${esc(p.id)}">› ${esc(p.title)}</button>`).join('');
   const install = isIOS && !standalone() ? '<div class="hint">Za instalaciju na iPhone: otvorite ovu stranicu u Safariju, dodirnite Dijeli, pa „Dodaj na početni zaslon“.</div>' : '';
   app().innerHTML = `
-    <h1>${esc(BOOK_TITLE)}</h1>
-    <div class="muted">Sv. Ljudevit Marija Grignion Montfortski</div>
+    <div class="band"><div class="band-bg"></div><div class="hflame flame"></div>
+      <div class="band-text"><div class="kicker">Totus Tuus</div><h1 class="btitle">${esc(BOOK_TITLE)}</h1></div></div>
+    <div class="muted" style="margin-top:6px">Sv. Ljudevit Marija Grignion Montfortski</div>
     <div class="quote">„Budite apostoli slave Marijine nasljedujući sv. Ljudevita Grigniona Montfortskog i bit ćete pobjednici u ovom boju koji nadilazi ljudske snage.“</div>
     <div class="muted">Blaženi kardinal Alojzije Stepinac</div>
     ${install}
@@ -683,6 +670,35 @@ async function init() {
     return;
   }
   route();
+  startSplash();
+}
+
+/* ---------- splash ---------- */
+function startSplash() {
+  const sp = document.getElementById('splash');
+  if (!sp) return;
+  if (!document.documentElement.classList.contains('splash-on')) { sp.remove(); return; }
+  sp.addEventListener('pointerdown', dismissSplash);
+  setTimeout(dismissSplash, 2000);
+}
+function dismissSplash() {
+  const sp = document.getElementById('splash');
+  if (!sp || sp.dataset.done) return;
+  sp.dataset.done = '1';
+  const finish = () => { document.documentElement.classList.remove('splash-on'); sp.remove(); const hf = document.querySelector('.hflame'); if (hf) hf.style.visibility = ''; app().classList.remove('app-in'); };
+  const hf = document.querySelector('.hflame'), sf = sp.querySelector('.sp-flame'), plate = sp.querySelector('.sp-plate');
+  if (!hf || !sf || !plate || !sf.animate || matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return; }
+  const a = sf.getBoundingClientRect(), b = hf.getBoundingClientRect(), pr = plate.getBoundingClientRect();
+  const band = document.querySelector('.band').getBoundingClientRect();
+  hf.style.visibility = 'hidden';
+  app().classList.add('app-in');
+  const D = 700, ease = 'cubic-bezier(.65,0,.25,1)';
+  sf.animate([{transform: 'translate(0,0) scale(1)'}, {transform: `translate(${b.left - a.left}px,${b.top - a.top}px) scale(${b.width / a.width})`}], {duration: D, easing: ease, fill: 'forwards'});
+  plate.style.height = pr.height + 'px'; plate.style.bottom = 'auto';
+  plate.animate([{height: pr.height + 'px'}, {height: band.height + 'px'}], {duration: D, easing: ease, fill: 'forwards'});
+  sp.querySelector('.sp-text').animate([{opacity: 1}, {opacity: 0}], {duration: 250, fill: 'forwards'});
+  const bgAnim = sp.animate([{backgroundColor: getComputedStyle(sp).backgroundColor}, {backgroundColor: 'rgba(0,0,0,0)'}], {duration: 500, delay: 150, fill: 'forwards'});
+  setTimeout(finish, D + 60);
 }
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 init();

@@ -14,8 +14,14 @@
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="style.css">
+<script src="themes.js"></script>
+<script>
+(function(){try{var h=location.hash;var home=(h===''||h==='#'||h==='#/');var seen=sessionStorage.getItem('p_splash');if(home&&!seen)document.documentElement.classList.add('splash-on');sessionStorage.setItem('p_splash','1');}catch(e){}try{applyPalette(JSON.parse(localStorage.getItem('p_theme')||'"light"'));}catch(e){applyPalette('light');}})();
+</script>
 </head>
 <body>
+<div id="splash" aria-hidden="true"><div class="sp-in"><div class="sp-plate"></div><div class="sp-flame flame"></div>
+<div class="sp-text"><div class="kicker">Totus Tuus</div><div class="sp-title">Posveta Isusu Kristu po Mariji</div><div class="sp-sub">Sv. Ljudevit Marija Grignion Montfortski</div></div></div></div>
 <main id="app" aria-live="polite"></main>
 <script src="app.js"></script>
 </body>
